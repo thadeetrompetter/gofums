@@ -26,7 +26,21 @@ func main() {
 fmt.Printf("2 decimal places: %f.2\n", 3.4567);
 fmt.Printf("print a boolean value: %t\n", true);
 fmt.Printf("print a hex value: %x\n", byte(65));
+```
 
+#### re-declaring variables
+
+Go complains if you assign no new values to a variable that has been declared
+before, using `:=` syntax.
+
+```go
+// will complain: no new variables on left side of :=
+foo, bar := true, 2
+foo, bar := true, 2
+
+// it's ok if you redeclare the first variable
+foo, bar := true, 2
+foo2, bar := true, 2
 ```
 
 ### strings
@@ -58,6 +72,7 @@ A single rune (character) can be enclosed by single quotes: `'r'`.
 
 ### control structures
 
+#### if
 It's possible to declare a variable in an if statement. The variable will then
 be scoped to the if statement's block.
 
@@ -68,8 +83,29 @@ if bytes, err := fmt.Printf("%s\n", "foobar"); err == nil {
 // but not outside
 ```
 
+Take care not to inadvertently shadow a named return value:
+Go vet will warn you about this.
+
+```go
+func empty(i []int) (n int) {
+	if n := len(i); n > 0 {
+		n = 1 // this is likely not the variable you want to return
+	}
+	return n
+}
+
+func main() {
+	intSlice := []int{1, 2, 3, 4, 5}
+	result := empty(intSlice)
+	fmt.Printf("foo: %d\n", result)
+}
+```
+#### switch
+
 The **switch** statement differs from javascript in that it is not necessary
  to add a `break` after each case that you want not to fall through.
+You can put as much comma separated logic as you like in each case statement,
+making the **go** switch much more flexible than in other c-like languages.
 If you want a case to fall through, you need to add `fallthrough` at the end
 to get fallthrough behavior.
 
@@ -107,6 +143,38 @@ for i < 10 {
 for i := 0; i < 10; i++ {
 	fmt.Println(i)
 	// i is scoped to this block
+}
+```
+
+#### loop labels
+
+Labeling loops allows you to break/continue out of one or more levels of loop
+nesting.
+
+```go
+func main() {
+	var (
+		numbers = []int{1, 2, 3, 5, 0, 5, 8, 6}
+		odd     int
+		even    int
+	)
+
+	// Label the first loop level
+First:
+	for i := 0; i < 10; i++ {
+		for _, number := range numbers {
+			if number == 0 {
+				break First // break loop when 0 is encountered
+			}
+			if number%2 == 0 {
+				even++
+			} else {
+				odd++
+			}
+		}
+	}
+	// will print 1 2 3 5 and then stop
+	fmt.Printf("odd: %d, even: %d\n", odd, even)
 }
 ```
 
@@ -729,7 +797,17 @@ foo3 := foo {
 }
 ```
 
-In general, you'll use pointers to the struct instead of its value (foo3)
+In general, you'll use pointers to the struct instead of its value (foo3).
+
+You can create an anonymous struct.
+
+```go
+foo4 := struct {
+	// properties
+}
+```
+Useful for one-off structs, like the ones you would use to specify the template
+for (un)marshalling a json response.
 
 You can define a method on the custom type:
 
